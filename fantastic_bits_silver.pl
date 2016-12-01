@@ -122,7 +122,7 @@ sub opponent_wizard_check {
             my $OPPONENT_WIZARDs = $entity{'WIZARD'}{$wizard_id}{OPPONENT_WIZARD};
             my $nearest = min map { $OPPONENT_WIZARDs->{$_}{distance} } keys %$OPPONENT_WIZARDs;
             
-            if ($distance2OPPONENT_WIZARD < 5000) {
+            if ($distance2OPPONENT_WIZARD) {
                 if ($distance2OPPONENT_WIZARD == $nearest) {
                     $entity{'WIZARD'}{$wizard_id}{OPPONENT_WIZARD}{$opponent_wizard_id}{target} = "true";
                     $entity{'OPPONENT_WIZARD'}{$opponent_wizard_id}{tracked} = "true";
