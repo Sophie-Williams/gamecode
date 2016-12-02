@@ -143,7 +143,18 @@ sub collisionwithmygoal {
         my $y       = shift;
         my $cpylow  = int( $mybase_y - 2000 );
         my $cpyhigh = int( $mybase_y + 2000 );
-        if (    ( $x < $mybase_x )
+        my $cpxlow;
+        my $cpxhigh;
+
+        if ($my_side eq 'left') {
+                $cpxhigh = ($mybase_x + 1000);
+                $cpxlow = ($mybase_x - 10000);
+        } elsif ($my_side eq 'right') {
+                $cpxhigh = ($mybase_x - 1000);
+                $cpxlow = ($mybase_x + 10000);
+        }
+
+        if (    ( $x ~~ [ $cpxlow .. $cpxhigh ] )
                 and ( $y ~~ [ $cpylow .. $cpyhigh ] ) )
         {
                 return "true";
@@ -160,6 +171,7 @@ sub predictposition {
         my $vy   = shift;
         my $newx = ( $x + $vx ) * 0.75; # TODO: Add Bludgers
         my $newy = ( $y + $vy ) * 0.75;
+
         $newx = int( $newx );
         $newy = int( $newy );
         return ( $newx, $newy );
@@ -403,9 +415,6 @@ sub bludgercheck {
 
 sub keeperposition {
         my $wizard_id = shift;
-
-        #my $upper_y = 1900;
-        #my $lower_y = 5600;
         return ( "$keeperposition_x $mybase_y" );
 }
 
@@ -518,6 +527,7 @@ sub shot_position {
         else {
                 $shot_y = $enemybase_y;
         }
+        $shot_y = $enemybase_y; # TODO: Tweak
         return "$enemybase_x $shot_y 500";
 }
 
@@ -1418,15 +1428,15 @@ while ( 1 ) {
                         $enemybase_x, $enemybase_y
                         );
                 $entity{ $entity_type }{ $entity_id }{ collide_mybase } =
-                		&collisionwithmygoal(
-                		$entity{ $entity_type }{ $entity_id }{ x_next },
-                		$entity{ $entity_type }{ $entity_id }{ y_next }
-                		);
+                                &collisionwithmygoal(
+                                $entity{ $entity_type }{ $entity_id }{ x_next },
+                                $entity{ $entity_type }{ $entity_id }{ y_next }
+                                );
                 $entity{ $entity_type }{ $entity_id }{ collide_enemybase } =
-                		&collisionwithenemygoal(
-                		$entity{ $entity_type }{ $entity_id }{ x_next },
-                		$entity{ $entity_type }{ $entity_id }{ y_next }
-                		);                
+                                &collisionwithenemygoal(
+                                $entity{ $entity_type }{ $entity_id }{ x_next },
+                                $entity{ $entity_type }{ $entity_id }{ y_next }
+                                );
         }
 
         &enemyposition();
@@ -1521,9 +1531,10 @@ while ( 1 ) {
                         if ( !$entity{ 'SNAFFLE' }{ $snaffle_id }{ tracked } ) {
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ tracked } = "false";
                         }
-                        
-                        print STDERR "COLLISION: " . $entity{ 'SNAFFLE' }{ $snaffle_id }{ collide_mybase } . " \n";
-                        
+
+                        if ( $wizard_id == 0) {
+                                print STDERR "COLLISION: " . $entity{ 'SNAFFLE' }{ $snaffle_id }{ collide_mybase } . " \n";
+                        }
                 }
 
                 foreach my $opponent_wizard_id (
@@ -1639,7 +1650,7 @@ while ( 1 ) {
                 }
 
                 if ( ( $wizard_id == 0 ) or ( $wizard_id == 2 ) ) {
-                	if ($round < 35) {
+                        if ($round < 35) {
                         &action( $wizard_id, "storm" );
                     } else {
                         &action( $wizard_id, "catcher" );
