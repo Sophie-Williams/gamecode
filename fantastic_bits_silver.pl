@@ -123,13 +123,43 @@ sub collision {
         }
 }
 
+sub collisionwithenemygoal {
+        my $x       = shift;
+        my $y       = shift;
+        my $cpylow  = int( $enemybase_y - 2000 );
+        my $cpyhigh = int( $enemybase_y + 2000 );
+        if (    ( $x == $enemybase_x )
+                and ( $y ~~ [ $cpylow .. $cpyhigh ] ) )
+        {
+                return "true";
+        }
+        else {
+                return "false";
+        }
+}
+
+sub collisionwithmygoal {
+        my $x       = shift;
+        my $y       = shift;
+        my $cpylow  = int( $mybase_y - 2000 );
+        my $cpyhigh = int( $mybase_y + 2000 );
+        if (    ( $x < $mybase_x )
+                and ( $y ~~ [ $cpylow .. $cpyhigh ] ) )
+        {
+                return "true";
+        }
+        else {
+                return "false";
+        }
+}
+
 sub predictposition {
         my $x    = shift;
         my $y    = shift;
         my $vx   = shift;
         my $vy   = shift;
-        my $newx = ( $x + $vx ) * 0.85;
-        my $newy = ( $y + $vy ) * 0.85;
+        my $newx = ( $x + $vx ) * 0.75; # TODO: Add Bludgers
+        my $newy = ( $y + $vy ) * 0.75;
         $newx = int( $newx );
         $newy = int( $newy );
         return ( $newx, $newy );
@@ -515,6 +545,188 @@ sub action {
                         $snaffle_y,    $distance2SNAFFLE
                         )
                         = &snafflecheck(
+                        $wizard_id,
+                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
+                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
+                        );
+                my (
+                        $opponent_wizard_check, $opponent_wizard_id,
+                        $OPPONENT_WIZARD_x,     $OPPONENT_WIZARD_y,
+                        $distance2opponent_wizard
+                        )
+                        = &opponent_wizard_check(
+                        $wizard_id,
+                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
+                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
+                        );
+                my (
+                        $bludgercheck, $bludger_id, $BLUDGER_x,
+                        $BLUDGER_y,    $distance2BLUDGER
+                        )
+                        = &bludgercheck(
+                        $wizard_id,
+                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
+                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
+                        );
+                my $handle_snaffle  = &handle_snaffle( $wizard_id );
+                my $cast_accio      = &cast( $wizard_id, "ACCIO", $snaffle_id );
+                my $cast_flipendo   = &cast( $wizard_id, "FLIPENDO", $snaffle_id );
+                my $cast_petrificus = &cast( $wizard_id, "PETRIFICUS", $snaffle_id );
+                my $cast_obliviate  = &cast( $wizard_id, "OBLIVIATE", $snaffle_id );
+                my $shot_position   = &shot_position( $wizard_id );
+
+                if ( ( $handle_snaffle ) and ( $handle_snaffle eq 'true' ) ) {
+                        print "THROW $shot_position\n";
+                }
+                elsif ( ( $opponent_wizard_check )
+                        and ( $cast_flipendo eq "true" )
+                        and ( $distance2opponent_wizard < 4000 ) )
+                {
+                        if (
+                                ( $enemy_side eq "right" )
+                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } >
+                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                )
+                        {
+                                $manastorage{ $wizard_id }{ mana } =
+                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
+                        }
+                        elsif (
+                                ( $enemy_side eq "left" )
+                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } <
+                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                )
+                        {
+                                $manastorage{ $wizard_id }{ mana } =
+                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
+                        }
+                        else {
+                                print "MOVE " . &keeperposition( $wizard_id ) . " 150\n";
+                        }
+                }
+                elsif ( ( $bludgercheck )
+                        and ( $cast_obliviate eq "true" )
+                        and ( $distance2BLUDGER < 1000 )
+                        and ( $manastorage{ $wizard_id }{ mana } > 50 ) )
+                {
+                        $manastorage{ $wizard_id }{ mana } =
+                                ( $manastorage{ $wizard_id }{ mana } - 5 );
+                        print "OBLIVIATE $bludger_id\n";
+                }
+                elsif ( $snafflecheck ) {
+                        my $snaffeldistancefromgoal =
+                                $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_enemybase };
+                        my $snaffeldistancefrommygoal =
+                                $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_mybase };
+
+                        if (    ( $cast_accio eq "true" )
+                                and ( $distance2SNAFFLE > 500 )
+                                and ( $distance2SNAFFLE < 5000 ) )
+                        {
+                                if (
+                                        ( $enemy_side eq "right" )
+                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } <
+                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                        )
+                                {
+                                        $manastorage{ $wizard_id }{ mana } =
+                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                        print "ACCIO $snaffle_id\n";
+                                }
+                                elsif (
+                                        ( $enemy_side eq "left" )
+                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } >
+                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                        )
+                                {
+                                        $manastorage{ $wizard_id }{ mana } =
+                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                        print "ACCIO $snaffle_id\n";
+                                }
+                                else {
+                                        print "MOVE "
+                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } . " "
+                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ y }
+                                                . " 150\n";
+                                }
+                        }
+                        elsif (
+                                    ( $cast_flipendo eq "true" )
+                                and ( $distance2SNAFFLE < 5500 )
+                                and ( $snaffeldistancefromgoal < 6000 )
+                                and ( $snaffeldistancefromgoal > 1000 )
+                                and (
+                                        (
+                                                $entity{ 'WIZARD' }{ $wizard_id }
+                                                { angle_enemybase_diff } < 15
+                                        )
+                                        or ( $entity{ 'WIZARD' }{ $wizard_id }
+                                                { angle_enemybase_diff } > -15 )
+                                )
+                                )
+                        {
+                                if (
+                                        ( $enemy_side eq "right" )
+                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } >
+                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                        )
+                                {
+                                        $manastorage{ $wizard_id }{ mana } =
+                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                        print "FLIPENDO $snaffle_id $action BOOM!\n";
+                                }
+                                elsif (
+                                        ( $enemy_side eq "left" )
+                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } <
+                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
+                                        )
+                                {
+                                        $manastorage{ $wizard_id }{ mana } =
+                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
+                                        print "FLIPENDO $snaffle_id $action BOOM!\n";
+                                }
+                                else {
+                                        print "MOVE "
+                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ x } . " "
+                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                                { $snaffle_id }{ y }
+                                                . " 150\n";
+                                }
+                        }
+                        else {
+                                print "MOVE "
+                                        . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                        { $snaffle_id }{ x } . " "
+                                        . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
+                                        { $snaffle_id }{ y }
+                                        . " 150\n";
+                        }
+                }
+                else {
+                        print "MOVE "
+                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }{ $snaffle_id }
+                                { x } . " "
+                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }{ $snaffle_id }
+                                { y }
+                                . " 150\n";
+                }
+
+        }
+        elsif ( $action eq "storm" ) {
+                my (
+                        $snafflecheck, $snaffle_id, $snaffle_x,
+                        $snaffle_y,    $distance2SNAFFLE
+                        )
+                        = &catcher_snafflecheck(
                         $wizard_id,
                         $entity{ 'WIZARD' }{ $wizard_id }{ x },
                         $entity{ 'WIZARD' }{ $wizard_id }{ y }
@@ -1205,6 +1417,16 @@ while ( 1 ) {
                         $entity{ $entity_type }{ $entity_id }{ y },
                         $enemybase_x, $enemybase_y
                         );
+                $entity{ $entity_type }{ $entity_id }{ collide_mybase } =
+                		&collisionwithmygoal(
+                		$entity{ $entity_type }{ $entity_id }{ x_next },
+                		$entity{ $entity_type }{ $entity_id }{ y_next }
+                		);
+                $entity{ $entity_type }{ $entity_id }{ collide_enemybase } =
+                		&collisionwithenemygoal(
+                		$entity{ $entity_type }{ $entity_id }{ x_next },
+                		$entity{ $entity_type }{ $entity_id }{ y_next }
+                		);                
         }
 
         &enemyposition();
@@ -1299,6 +1521,9 @@ while ( 1 ) {
                         if ( !$entity{ 'SNAFFLE' }{ $snaffle_id }{ tracked } ) {
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ tracked } = "false";
                         }
+                        
+                        print STDERR "COLLISION: " . $entity{ 'SNAFFLE' }{ $snaffle_id }{ collide_mybase } . " \n";
+                        
                 }
 
                 foreach my $opponent_wizard_id (
@@ -1414,14 +1639,15 @@ while ( 1 ) {
                 }
 
                 if ( ( $wizard_id == 0 ) or ( $wizard_id == 2 ) ) {
-                        &action( $wizard_id, "defender" );
+                	if ($round < 35) {
+                        &action( $wizard_id, "storm" );
+                    } else {
+                        &action( $wizard_id, "catcher" );
+                    }
                 }
                 elsif ( ( $wizard_id == 1 ) or ( $wizard_id == 3 ) ) {
                         my $snafflecount = keys $entity{ 'SNAFFLE' };
-                        if ( $round < 25 ) {
-                                &action( $wizard_id, "catcher" );
-                        }
-                        elsif ( $snafflecount < 3 ) {
+                        if ( $snafflecount < 3 ) {
                                 &action( $wizard_id, "keeper" );
                         }
                         elsif ( $attackmode eq "true" ) {
