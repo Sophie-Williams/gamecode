@@ -559,71 +559,13 @@ sub action {
                         $entity{ 'WIZARD' }{ $wizard_id }{ x },
                         $entity{ 'WIZARD' }{ $wizard_id }{ y }
                         );
-                my (
-                        $opponent_wizard_check, $opponent_wizard_id,
-                        $OPPONENT_WIZARD_x,     $OPPONENT_WIZARD_y,
-                        $distance2opponent_wizard
-                        )
-                        = &opponent_wizard_check(
-                        $wizard_id,
-                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
-                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
-                        );
-                my (
-                        $bludgercheck, $bludger_id, $BLUDGER_x,
-                        $BLUDGER_y,    $distance2BLUDGER
-                        )
-                        = &bludgercheck(
-                        $wizard_id,
-                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
-                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
-                        );
                 my $handle_snaffle  = &handle_snaffle( $wizard_id );
                 my $cast_accio      = &cast( $wizard_id, "ACCIO", $snaffle_id );
                 my $cast_flipendo   = &cast( $wizard_id, "FLIPENDO", $snaffle_id );
-                my $cast_petrificus = &cast( $wizard_id, "PETRIFICUS", $snaffle_id );
-                my $cast_obliviate  = &cast( $wizard_id, "OBLIVIATE", $snaffle_id );
                 my $shot_position   = &shot_position( $wizard_id );
 
                 if ( ( $handle_snaffle ) and ( $handle_snaffle eq 'true' ) ) {
                         print "THROW $shot_position\n";
-                }
-                elsif ( ( $opponent_wizard_check )
-                        and ( $cast_flipendo eq "true" )
-                        and ( $distance2opponent_wizard < 4000 ) )
-                {
-                        if (
-                                ( $enemy_side eq "right" )
-                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } >
-                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                )
-                        {
-                                $manastorage{ $wizard_id }{ mana } =
-                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
-                        }
-                        elsif (
-                                ( $enemy_side eq "left" )
-                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } <
-                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                )
-                        {
-                                $manastorage{ $wizard_id }{ mana } =
-                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
-                        }
-                        else {
-                                print "MOVE " . &keeperposition( $wizard_id ) . " 150\n";
-                        }
-                }
-                elsif ( ( $bludgercheck )
-                        and ( $cast_obliviate eq "true" )
-                        and ( $distance2BLUDGER < 1000 )
-                        and ( $manastorage{ $wizard_id }{ mana } > 50 ) )
-                {
-                        $manastorage{ $wizard_id }{ mana } =
-                                ( $manastorage{ $wizard_id }{ mana } - 5 );
-                        print "OBLIVIATE $bludger_id\n";
                 }
                 elsif ( $snafflecheck ) {
                         my $snaffeldistancefromgoal =
@@ -741,71 +683,12 @@ sub action {
                         $entity{ 'WIZARD' }{ $wizard_id }{ x },
                         $entity{ 'WIZARD' }{ $wizard_id }{ y }
                         );
-                my (
-                        $opponent_wizard_check, $opponent_wizard_id,
-                        $OPPONENT_WIZARD_x,     $OPPONENT_WIZARD_y,
-                        $distance2opponent_wizard
-                        )
-                        = &opponent_wizard_check(
-                        $wizard_id,
-                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
-                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
-                        );
-                my (
-                        $bludgercheck, $bludger_id, $BLUDGER_x,
-                        $BLUDGER_y,    $distance2BLUDGER
-                        )
-                        = &bludgercheck(
-                        $wizard_id,
-                        $entity{ 'WIZARD' }{ $wizard_id }{ x },
-                        $entity{ 'WIZARD' }{ $wizard_id }{ y }
-                        );
                 my $handle_snaffle  = &handle_snaffle( $wizard_id );
-                my $cast_accio      = &cast( $wizard_id, "ACCIO", $snaffle_id );
                 my $cast_flipendo   = &cast( $wizard_id, "FLIPENDO", $snaffle_id );
-                my $cast_petrificus = &cast( $wizard_id, "PETRIFICUS", $snaffle_id );
-                my $cast_obliviate  = &cast( $wizard_id, "OBLIVIATE", $snaffle_id );
                 my $shot_position   = &shot_position( $wizard_id );
 
                 if ( ( $handle_snaffle ) and ( $handle_snaffle eq 'true' ) ) {
                         print "THROW $shot_position\n";
-                }
-                elsif ( ( $opponent_wizard_check )
-                        and ( $cast_flipendo eq "true" )
-                        and ( $distance2opponent_wizard < 4000 ) )
-                {
-                        if (
-                                ( $enemy_side eq "right" )
-                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } >
-                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                )
-                        {
-                                $manastorage{ $wizard_id }{ mana } =
-                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
-                        }
-                        elsif (
-                                ( $enemy_side eq "left" )
-                                and ( $entity{ 'OPPONENT_WIZARD' }{ $opponent_wizard_id }{ x } <
-                                        $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                )
-                        {
-                                $manastorage{ $wizard_id }{ mana } =
-                                        ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                print "FLIPENDO $opponent_wizard_id $action MOVE!\n";
-                        }
-                        else {
-                                print "MOVE " . &keeperposition( $wizard_id ) . " 150\n";
-                        }
-                }
-                elsif ( ( $bludgercheck )
-                        and ( $cast_obliviate eq "true" )
-                        and ( $distance2BLUDGER < 1000 )
-                        and ( $manastorage{ $wizard_id }{ mana } > 50 ) )
-                {
-                        $manastorage{ $wizard_id }{ mana } =
-                                ( $manastorage{ $wizard_id }{ mana } - 5 );
-                        print "OBLIVIATE $bludger_id\n";
                 }
                 elsif ( $snafflecheck ) {
                         my $snaffeldistancefromgoal =
@@ -813,45 +696,9 @@ sub action {
                         my $snaffeldistancefrommygoal =
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_mybase };
 
-                        if (    ( $cast_accio eq "true" )
-                                and ( $distance2SNAFFLE > 500 )
-                                and ( $distance2SNAFFLE < 5000 ) )
-                        {
-                                if (
-                                        ( $enemy_side eq "right" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } <
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                elsif (
-                                        ( $enemy_side eq "left" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } >
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                else {
-                                        print "MOVE "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } . " "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ y }
-                                                . " 150\n";
-                                }
-                        }
-                        elsif (
+								if (
                                     ( $cast_flipendo eq "true" )
                                 and ( $distance2SNAFFLE < 5500 )
-                                and ( $snaffeldistancefromgoal < 6000 )
                                 and ( $snaffeldistancefromgoal > 1000 )
                                 and (
                                         (
@@ -1010,39 +857,7 @@ sub action {
                         my $snaffeldistancefrommygoal =
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_mybase };
 
-                        if ( ( $cast_accio eq "true" ) and ( $distance2SNAFFLE < 5000 ) ) {
-                                if (
-                                        ( $enemy_side eq "right" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } <
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                elsif (
-                                        ( $enemy_side eq "left" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } >
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                else {
-                                        print "MOVE "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } . " "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ y }
-                                                . " 150\n";
-                                }
-                        }
-                        elsif (
+                        if (
                                     ( $cast_flipendo eq "true" )
                                 and ( $distance2SNAFFLE < 4000 )
                                 and (
@@ -1235,39 +1050,7 @@ sub action {
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_enemybase };
                         my $snaffeldistancefrommygoal =
                                 $entity{ 'SNAFFLE' }{ $snaffle_id }{ distance_mybase };
-                        if ( $cast_accio eq "true" ) {    # PULL
-                                if (
-                                        ( $enemy_side eq "right" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } <
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                elsif (
-                                        ( $enemy_side eq "left" )
-                                        and ( $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } >
-                                                $entity{ 'WIZARD' }{ $wizard_id }{ x } )
-                                        )
-                                {
-                                        $manastorage{ $wizard_id }{ mana } =
-                                                ( $manastorage{ $wizard_id }{ mana } - 20 );
-                                        print "ACCIO $snaffle_id\n";
-                                }
-                                else {
-                                        print "MOVE "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ x } . " "
-                                                . $entity{ 'WIZARD' }{ $wizard_id }{ SNAFFLE }
-                                                { $snaffle_id }{ y }
-                                                . " 150\n";
-                                }
-                        }
-                        elsif ( ( $cast_flipendo eq "true" )
+                        if ( ( $cast_flipendo eq "true" )
                                 and ( $distance2SNAFFLE < 3500 ) )
                         {
                                 if (
