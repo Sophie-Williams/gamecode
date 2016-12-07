@@ -12,7 +12,7 @@ select(STDOUT); $| = 1; # DO NOT REMOVE
 my $tokens;
 my %zone;
 my %pods;
-my ($mypods,$enemypods,$enemy_id);
+my ($mypods,$enemypods,$enemy_id,$tick);
 
 # player_count: the amount of players (always 2)
 # my_id: my player ID (0 or 1)
@@ -30,8 +30,8 @@ for my $i (0..$zone_count-1) {
 for my $i (0..$link_count-1) {
     chomp($tokens=<STDIN>);
     my ($zone_1, $zone_2) = split(/ /,$tokens);
-    $zone{path}{$zone_1}{$zone_2} = "true";
-    $zone{path}{$zone_2}{$zone_1} = "true";
+    $zone{path}{$zone_1}{$zone_2} = $zone_2;
+    $zone{path}{$zone_2}{$zone_1} = $zone_1;
 }
 
 if ($my_id == 0) {
@@ -59,7 +59,9 @@ sub getpath {
     chomp(my $zone_id = shift);
     chomp(my $destination = shift);
     foreach my $zone (sort keys $zone{path}{$zone_id}) {
-            
+    
+    print STDERR "$zone{$destination}\n";
+    
        if (($zone{$destination}) and ($zone{$destination} eq "true")) {
             print STDERR "HIT\n";
             return("true",$zone{$destination});
@@ -84,8 +86,17 @@ sub move {
     } 
 }
 
+sub randompath {
+    my $zone_id = shift;
+    my @zone_keys    = keys $zone{path}{$zone_id};
+    my $random_zone_id   = $zone_keys[rand @zone_keys];
+    my $random_zone = $zone{path}{$zone_id}{$random_zone_id};
+    return $random_zone;
+}
+
 # game loop
 while (1) {
+    $tick++;
     chomp(my $my_platinum = <STDIN>); # your available Platinum
     $pods{$mypods}{$my_platinum} = $my_platinum;
     &podcount($my_platinum);
@@ -106,40 +117,42 @@ while (1) {
         $zone{zone}{$z_id}{player1}{pods} = $pods_p1;
     }
     
-    &podlocation();
+    #&podlocation();
 
-    my @cmds;
+    my (@cmds,@cmds2);
     foreach my $zone_id (sort keys $zone{zone}) {
+        &podlocation();
         if ($zone{zone}{$zone_id}{$mypods}{pods}) {
-               
-            foreach my $path_zone_id (sort keys $zone{zone}) {
-                if (($zone{zone}{$path_zone_id}{owner} != $my_id) and ($zone{zone}{$path_zone_id}{visible} == 1)) {
-                    
-                    my $path = &getpath($zone_id,$path_zone_id);
-                    #if ($path eq "true") {
-                        #print $zone{zone}{$zone_id}{$mypods}{pods} . " " . $zone_id . " " . $path_zone_id . "\n";
-                        my $cmd = (1 . " " . $zone_id . " " . $path_zone_id . " ");
-                        push(@cmds,$cmd);
-                    #}
-                    
+            my $half = int($pods{$mypods}{zone}{$zone_id}{count} / 2);
+            if ($tick < 30) { $half = 1; } elsif (($pods{$mypods}{zone}{$zone_id}{count} > 1) and ($pods{$mypods}{zone}{$zone_id}{count} < 6)) { $half = $pods{$mypods}{zone}{$zone_id}{count}; } elsif ($pods{$mypods}{zone}{$zone_id}{count} == 1) { $half = 1; }
+
+            foreach my $path_zone_id (sort keys $zone{path}{$zone_id}) {
+                if ($zone{zone}{$path_zone_id}{owner} == $my_id) {
+                    my $randomzone = &randompath($zone_id);
+                    my $cmd = ($half . " " . $zone_id . " " . $randomzone . " ");
+                    push(@cmds,$cmd) unless ((grep{$_ eq $cmd} @cmds) or (grep{$_ eq $cmd} @cmds2));
+                    next;
+                } elsif ($zone{zone}{$path_zone_id}{owner} != $my_id) {
+                    if (($zone{path}{$zone_id}{$path_zone_id}) or ($zone{path}{$path_zone_id}{$zone_id})) {
+                        my $cmd = ($half . " " . $zone_id . " " . $path_zone_id);
+                        push(@cmds2,$cmd) unless ((grep{$_ eq $cmd} @cmds2) or (grep{$_ eq $cmd} @cmds));
+                        next;
+                    }
+                    next;
                 }
             }
         }
     }
 
-    my $command;
-    foreach(@cmds) {
-        $command = $command .= $_;
-    }
-    undef @cmds;
-    
-    if ($command) {
-        print $command . "\n";
-        print "WAIT\n";
-    } else {
-        print "WAIT\n";
-        print "WAIT\n";
-    }
-    
+
+if ($cmds2[0]) {
+    print join(" ",@cmds2," ",@cmds) . "\n";
+    print "WAIT\n";
+} else {
+    print join(" ",@cmds) . "\n";
+    print "WAIT\n";
+}
+
+
     #print STDERR Dumper(\%zone{path});
 }
