@@ -42,8 +42,8 @@ if ($myteam eq "team0") {
 # Todo:
 # - Warte-Bot, der die gegner abzieht
 # - Shared ghost-db wieder einbauen. anhand anzahl der buster begrenzen
-# - besserer roam-mode. (ggfs per zurÃ¼ck gelegter strecke?)
-# - HÃ¼ter-Bot, der die geister richtung base treibt
+# - besserer roam-mode. (ggfs per zurück gelegter strecke?)
+# - Hüter-Bot, der die geister richtung base treibt
 # - Stun-Timer so anpassen das falls man gerade busted, wartet bis der geist ca 10% hp hat. (gegner blocken)
 # - nicht mehr als 2 pro geist los schicken
 # - geist mit wenigster hp zuerst angreifen
@@ -71,9 +71,9 @@ sub sweep {
     my $nextpos_y;
 
     if (($param eq "up") and (!$entity{$myteam}{$busterid}{side})) {
-        $nextpos_y = 1800;
+        $nextpos_y = 2000;
     } elsif (($param eq "down") and (!$entity{$myteam}{$busterid}{side})) {
-        $nextpos_y = 7200;
+        $nextpos_y = 7000;
     } elsif ($entity{$myteam}{$busterid}{side}) {
         $nextpos_y = $entity{$myteam}{$busterid}{side};
     } elsif ($param eq "middle") {
@@ -148,11 +148,9 @@ sub trapcheck {
             if ($entity{$myteam}{$busterid}{distance2mybase} > 1600) {
                 $entity{'ghost'}{$ghost_id}{trapped} = "true";
                 delete $entity{'ghost'}{$ghost_id};
-                delete $entity{$myteam}{$busterid}{ghost}{$ghost_id};
                 return "back2base";
             } else {
                 delete $entity{'ghost'}{$ghost_id};
-                delete $entity{$myteam}{$busterid}{ghost}{$ghost_id};
                 return "release";
             }
         }
@@ -173,14 +171,17 @@ sub ghostcheck {
             
             if ($entity{$myteam}{$busterid}{ghost}{$ghost_id}{distance}) {
                 my $ghosts = $entity{$myteam}{$busterid}{ghost};
-                my $nearest = min map { $ghosts->{$_}{distance} } keys %$ghosts;
+	            my $nearest = min map { $ghosts->{$_}{distance} } keys %$ghosts;
+#                my $nearest = min $entity{$myteam}{$busterid}{ghost}{$ghost_id}{distance};
                 
                 if ($distance2ghost == $nearest) {
-                    if (($entity{'ghost'}{$ghost_id}{trapped} eq "false") and (($entity{$myteam}{$busterid}{state} == 0) or ($entity{$myteam}{$busterid}{state} == 3))) {
+                    if (($entity{'ghost'}{$ghost_id}{trappedby} > 1) and ($entity{$myteam}{$busterid}{state} != 3)) {
+
+                    } elsif (($entity{'ghost'}{$ghost_id}{trapped} eq "false") and (($entity{$myteam}{$busterid}{state} == 0) or ($entity{$myteam}{$busterid}{state} == 3))) {
                         $entity{$myteam}{$busterid}{ghost}{$ghost_id}{id} = $ghost_id;
                         $entity{$myteam}{$busterid}{ghost}{$ghost_id}{x} = $entity{'ghost'}{$ghost_id}{x};
                         $entity{$myteam}{$busterid}{ghost}{$ghost_id}{y} = $entity{'ghost'}{$ghost_id}{y};
-                        return("true",$entity{$myteam}{$busterid}{ghost}{$ghost_id}{id},$entity{$myteam}{$busterid}{ghost}{$ghost_id}{x},$entity{$myteam}{$busterid}{ghost}{$ghost_id}{y},$distance2ghost);
+                        return("true",$entity{$myteam}{$busterid}{ghost}{$ghost_id}{id},$entity{'ghost'}{$ghost_id}{x},$entity{'ghost'}{$ghost_id}{y},$distance2ghost);
                     }
                 }
             }
@@ -233,14 +234,6 @@ sub cleanhash {
             } elsif ($entity{'ghost'}{$ghost_id}{trapped} eq "true") {
                 delete $entity{'ghost'}{$ghost_id};
             }
-            
-            #foreach my $buster_id (sort keys %{ $entity{$myteam} }) {
-            #    if (!$entity{'ghost'}{$ghost_id}{x}) {
-            #        if ($entity{$myteam}{$buster_id}{ghost}{$ghost_id}) {
-            #            delete $entity{$myteam}{$buster_id}{ghost}{$ghost_id};
-            #        }
-            #    }
-            #}
         }
     }
 
@@ -266,7 +259,10 @@ sub stuncheck {
     	                return($enemyid,"stun");
                     }
                 }
-            }
+            }# elsif ((($entity{$enemyteam}{$enemyid}{state} == 1) and ($distance2enemy < 3000)) and ((!$entity{$myteam}{$busterid}{elapsedtick}) or ($tick > $entity{$myteam}{$busterid}{elapsedtick}))) {
+             #   print "MOVE " . $entity{$enemyteam}{$enemyid}{x} . " " . $entity{$enemyteam}{$enemyid}{y} . "\n";
+        #    
+        #    }
         }
     }
 }
@@ -349,6 +345,9 @@ while (1) {
     }
 
 	&ghostistrapped();
+	&cleanhash();
+    
+
 
 	my $internalid;
 	foreach my $busterid (sort keys %{ $entity{$myteam} }) {
@@ -401,6 +400,7 @@ while (1) {
     if ($realtick % 100) {
         delete $entity{'ghost'};
     }
-
-    #print STDERR Dumper(\%entity);
+    
+    #&cleanhash();
+    print STDERR Dumper(\%entity);
 }
