@@ -15,14 +15,13 @@ my %enemy;
 my %mine;
 my %cannonball;
 my $tick;
-my $shipcount;
 
 sub oddr2cube {
     my $col = shift;
     my $row = shift;
     my $x = $col - ($row - ($row & 1)) / 2;
     my $z = $row;
-    my $y = (-$x - $z);
+    my $y = (-$x-$z);
     return($x,$y,$z);
 }
 
@@ -35,259 +34,51 @@ sub cube2oddr {
     return($col,$row);
 }
 
-sub cornermove {
-    my $ship_id = shift;
-    my $x = $ship{$ship_id}{x};
-    my $y = $ship{$ship_id}{y};
-    # PORT = left
-    # STARBOARD = right
-
-    if (($x == 0) and ($y == 0)){ # Top Left
-        if (($ship{$ship_id}{orientation} == 1) or ($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4)) {
-            return("PORT");
-        }
-    } elsif (($x == 0) and ($y == 20)){ # Bottom Left
-        if (($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4) or ($ship{$ship_id}{orientation} == 5)) {
-            return("PORT");
-        }
-    } elsif (($x == 22) and ($y == 0)){ # Top Right
-        if (($ship{$ship_id}{orientation} == 0) or ($ship{$ship_id}{orientation} == 1) or ($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 5)) {
-            return("PORT");
-        }
-    } elsif (($x == 22) and ($y == 20)){ # Bottom Right
-        if (($ship{$ship_id}{orientation} == 0) or ($ship{$ship_id}{orientation} == 1) or ($ship{$ship_id}{orientation} == 4) or ($ship{$ship_id}{orientation} == 5)) {
-            return("PORT");
-        }
-    } elsif ($x == 0) { # Left
-        if ($ship{$ship_id}{orientation} == 2) {
-            return("STARBOARD");
-        } elsif (($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4)) {
-        	return("PORT");
-        }
-    } elsif ($x == 22) { # Right
-        if ($ship{$ship_id}{orientation} == 1) {
-            return("PORT");
-        } elsif (($ship{$ship_id}{orientation} == 0) or ($ship{$ship_id}{orientation} == 5)) {
-        	return("STARBOARD");
-        }
-    } elsif ($y == 0) { # Top
-        if ($ship{$ship_id}{orientation} == 2) {
-            return("PORT");
-        } elsif ($ship{$ship_id}{orientation} == 1) {
-        	return("STARBOARD");
-        }
-    } elsif ($y == 20) { # Bottom
-        if ($ship{$ship_id}{orientation} == 4) {
-            return("STARBOARD");
-        } elsif ($ship{$ship_id}{orientation} == 5) {
-        	return("PORT");
-        }
-    }
-}    
+sub getcubedistance {
+    my $cube_x1 = shift;
+    my $cube_y1 = shift;
+    my $cube_z1 = shift;
+    my $cube_x2 = shift;
+    my $cube_y2 = shift;
+    my $cube_z2 = shift;
+    my $cubedistance = (abs($cube_x1 - $cube_x2) + abs($cube_y1 - $cube_y2) + abs($cube_z1 - $cube_z2)) / 2;
+}
 
 sub cornerslide {
     my $ship_id = shift;
-    my $x = $ship{$ship_id}{x};
-    my $y = $ship{$ship_id}{y};
-    # PORT = left
-    # STARBOARD = right
-
-	if ($ship{$ship_id}{speed} > 1) {
-	    if (($x < 1) or ($y < 1)) {
-	        if (($ship{$ship_id}{orientation} == 1) or ($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4)) {
-	            return("PORT");
-	        }
-	    } elsif (($x > 19) or ($y > 21)) {
-	        if (($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4) or ($ship{$ship_id}{orientation} == 5)) {
-	            return("STARBOARD");
-	        }
-	    }
-	}    
-}
-
-sub predictnext {
-    my $ship_id = shift;
-    my $speed = $ship{$ship_id}{speed};
-    my $orientation = $ship{$ship_id}{orientation};
-    my $target_col;
-    my $target_row;
-    my $line;
-    if ($ship{$ship_id}{x} % 2 == 0) { $line = "even"; }
-    if ($ship{$ship_id}{x} % 2 == 1) { $line = "odd"; }
-
-    if ($orientation == 0) {
-        if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
-        } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
+    my $x = $ship{$ship_id}{hull_front_x};
+    my $y = $ship{$ship_id}{hull_front_y};
+    if (($x < 2) or ($y < 2)) {
+        if (($ship{$ship_id}{orientation} == 1) or ($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4)) {
+            if ($ship{$ship_id}{speed} > 0) {
+            	return("MOVE 12 10");
+            }
         }
-    } elsif ($orientation == 1) {
-        if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
-        } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
+    } elsif (($x > 18) or ($y > 20)) {
+        if (($ship{$ship_id}{orientation} == 2) or ($ship{$ship_id}{orientation} == 3) or ($ship{$ship_id}{orientation} == 4) or ($ship{$ship_id}{orientation} == 5)) {
+            if ($ship{$ship_id}{speed} > 0) {
+            	return("MOVE 12 10");
+            }
         }
-    } elsif ($orientation == 2) {
-        if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
-        } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
-        }
-    } elsif ($orientation == 3) {
-        if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
-        } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
-        }
-    } elsif ($orientation == 4) {
-        if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
-        } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
-        }
-    } elsif ($orientation == 5) {
-        if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
-        } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
-        }
-    }
-    
-    if ($target_col < 0) { $target_col = 0; }
-    if ($target_col > 22) { $target_col = 22; }
-    if ($target_row < 0) { $target_row = 0; }
-    if ($target_row > 20) { $target_row = 20; }
-    
-    return($target_col,$target_row);
-}
-
-sub aim {
-    my $ship_id = shift;
-    my $enemy_id = shift;
-    my $speed = $enemy{$enemy_id}{speed};
-    my $orientation = $enemy{$enemy_id}{orientation};
-    my $distance = $ship{$ship_id}{enemies}{$enemy_id};
-    my $target_col;
-    my $target_row;
-    my $line;
-    if ($enemy{$enemy_id}{x} % 2 == 0) { $line = "even"; }
-    if ($enemy{$enemy_id}{x} % 2 == 1) { $line = "odd"; }
-    
-    my $reachtime = (2 + $distance) / 3;
-    my $speeddiff = ($speed + $reachtime);
-    $speeddiff = int($speeddiff);
-    if ($speed == 0) { $speeddiff = 0; }
-
-    if ($orientation == 0) {
-        if ($line eq 'even') {
-            $target_col = ($enemy{$enemy_id}{x} + $speeddiff);
-            $target_row = $enemy{$enemy_id}{y};
-        } elsif ($line eq 'odd') {
-            $target_col = ($enemy{$enemy_id}{x} + $speeddiff);
-            $target_row = $enemy{$enemy_id}{y};
-        }
-    } elsif ($orientation == 1) {
-        if ($line eq 'even') {
-            $target_col = $enemy{$enemy_id}{x};
-            $target_row = ($enemy{$enemy_id}{y} - $speeddiff);
-        } elsif ($line eq 'odd') {
-            $target_col = ($enemy{$enemy_id}{x} + $speeddiff);
-            $target_row = ($enemy{$enemy_id}{y} - $speeddiff);
-        }
-    } elsif ($orientation == 2) {
-        if ($line eq 'even') {
-            $target_col = ($enemy{$enemy_id}{x} - $speeddiff);
-            $target_row = ($enemy{$enemy_id}{y} - $speeddiff);
-        } elsif ($line eq 'odd') {
-            $target_col = $enemy{$enemy_id}{x};
-            $target_row = ($enemy{$enemy_id}{y} - $speeddiff);
-        }
-    } elsif ($orientation == 3) {
-        if ($line eq 'even') {
-            $target_col = ($enemy{$enemy_id}{x} - $speeddiff);
-            $target_row = $enemy{$enemy_id}{y};
-        } elsif ($line eq 'odd') {
-            $target_col = ($enemy{$enemy_id}{x} - $speeddiff);
-            $target_row = $enemy{$enemy_id}{y};
-        }
-    } elsif ($orientation == 4) {
-        if ($line eq 'even') {
-            $target_col = ($enemy{$enemy_id}{x} - $speeddiff);
-            $target_row = ($enemy{$enemy_id}{y} + $speeddiff);
-        } elsif ($line eq 'odd') {
-            $target_col = $enemy{$enemy_id}{x};
-            $target_row = ($enemy{$enemy_id}{y} + $speeddiff);
-        }
-    } elsif ($orientation == 5) {
-        if ($line eq 'even') {
-            $target_col = $enemy{$enemy_id}{x};
-            $target_row = ($enemy{$enemy_id}{y} + $speeddiff);
-        } elsif ($line eq 'odd') {
-            $target_col = ($enemy{$enemy_id}{x} + $speeddiff);
-            $target_row = ($enemy{$enemy_id}{y} + $speeddiff);
-        }
-    }
-    
-    if ($target_col < 0) { $target_col = 0; }
-    if ($target_col > 22) { $target_col = 22; }
-    if ($target_row < 0) { $target_row = 0; }
-    if ($target_row > 20) { $target_row = 20; }
-    
-    my $ship_front_x = $ship{$ship_id}{hull_front_x};
-    my $ship_front_y = $ship{$ship_id}{hull_front_y};
-    my $ship_mid_x = $ship{$ship_id}{hull_mid_x};
-    my $ship_mid_y = $ship{$ship_id}{hull_mid_y};
-    my $ship_back_x = $ship{$ship_id}{hull_back_x};
-    my $ship_back_y = $ship{$ship_id}{hull_back_y};
-    
-    if (($ship{$ship_id}{speed} == 0) or ($ship{$ship_id}{stuck} eq 'true')) {
-    	$ship{$ship_id}{suicide} = 'false';
-    	return($target_col,$target_row);    	
-    } elsif ((($target_col != $ship_front_x) and ($target_row != $ship_front_y)) and (($target_col != $ship_mid_x) and ($target_row != $ship_mid_y)) and (($target_col != $ship_back_x) and ($target_row != $ship_back_y))) {
-    	$ship{$ship_id}{suicide} = 'false';
-        return($target_col,$target_row);
-    } else {
-    	$ship{$ship_id}{suicide} = 'true';
-    	return($target_col,$target_row);
     }
 }
 
 sub avoidhit {
 	my $ship_id = shift;
+    my $ship_next_x = $ship{$ship_id}{next_x};
+    my $ship_next_y = $ship{$ship_id}{next_y};
     my $ship_front_x = $ship{$ship_id}{hull_front_x};
     my $ship_front_y = $ship{$ship_id}{hull_front_y};
     my $ship_mid_x = $ship{$ship_id}{hull_mid_x};
     my $ship_mid_y = $ship{$ship_id}{hull_mid_y};
     my $ship_back_x = $ship{$ship_id}{hull_back_x};
     my $ship_back_y = $ship{$ship_id}{hull_back_y};
-    my $ship_next_x = $ship{$ship_id}{next_x};
-    my $ship_next_y = $ship{$ship_id}{next_y};
     
     foreach my $cannonball_id (sort keys %cannonball) {
 	    my $target_x = $cannonball{$cannonball_id}{target_x};
 	    my $target_y = $cannonball{$cannonball_id}{target_y};
 
-		if ($ship{$ship_id}{stuck} eq 'true') {
-			
-		} elsif ((($cannonball{$cannonball_id}{countdown} == 1) or ($cannonball{$cannonball_id}{countdown} == 2)) and (($target_x == $ship_front_x) and ($target_y == $ship_front_y))) {
-            if ($ship{$ship_id}{speed} > 1) {
-				return("true","SLOWER");
-            } else {
-                return("true","FASTER");
-            }
-	    } elsif ((($cannonball{$cannonball_id}{countdown} == 1) or ($cannonball{$cannonball_id}{countdown} == 2)) and (($target_x == $ship_mid_x) and ($target_y == $ship_mid_y))) {
+	    if ((($cannonball{$cannonball_id}{countdown} == 2) and ($ship{$ship_id}{speed} > 0)) and (($target_x == $ship_next_x) and ($target_y == $ship_next_y))) {
             if ($ship{$ship_id}{speed} > 1) {
     	    	if (int(rand(2)) == 0) {
     	    		return("true","PORT");
@@ -297,7 +88,9 @@ sub avoidhit {
             } else {
                 return("true","FASTER");
             }
-	    } elsif ((($cannonball{$cannonball_id}{countdown} == 1) and ($ship{$ship_id}{speed} > 0)) and (($target_x == $ship_next_x) and ($target_y == $ship_next_y))) {
+	    } elsif ((($cannonball{$cannonball_id}{countdown} == 2) and ($ship{$ship_id}{speed} == 0)) and (($target_x == $ship_next_x) and ($target_y == $ship_next_y))) {
+            return("true","FASTER");
+	    } elsif ((($cannonball{$cannonball_id}{countdown} == 0) or ($cannonball{$cannonball_id}{countdown} == 1)) and (($target_x == $ship_front_x) and ($target_y == $ship_front_y))) {
             if ($ship{$ship_id}{speed} > 1) {
     	    	if (int(rand(2)) == 0) {
     	    		return("true","PORT");
@@ -305,72 +98,90 @@ sub avoidhit {
     	    		return("true","STARBOARD");
     	    	}
             } else {
-                return("true","SLOWER");
+                return("true","FASTER");
             }
-	    } elsif ((($cannonball{$cannonball_id}{countdown} == 1) and ($ship{$ship_id}{speed} == 0)) and (($target_x == $ship_back_x) and ($target_y == $ship_back_y))) {
-	        return("true","FASTER");
+	    } elsif (($cannonball{$cannonball_id}{countdown} == 1) and (($target_x == $ship_mid_x) and ($target_y == $ship_mid_y))) {
+            if ($ship{$ship_id}{speed} > 1) {
+    	    	if (int(rand(2)) == 0) {
+    	    		return("true","PORT");
+    	    	} else {
+    	    		return("true","STARBOARD");
+    	    	}
+            } else {
+                return("true","FASTER");
+            }
+	    } elsif (($cannonball{$cannonball_id}{countdown} == 1) and (($target_x == $ship_back_x) and ($target_y == $ship_back_y))) {
+            if ($ship{$ship_id}{speed} > 1) {
+    	    	if (int(rand(2)) == 0) {
+    	    		return("true","PORT");
+    	    	} else {
+    	    		return("true","STARBOARD");
+    	    	}
+            } else {
+                return("true","FASTER");
+            }
 	    }
     }
 }
 
-sub getshipfront {
-    my $ship_id = shift;
-    my $speed = $ship{$ship_id}{speed};
-    my $orientation = $ship{$ship_id}{orientation};
+sub predict {
+	my $item = shift;
+    my $id = shift;
+    my $speed = $item->{$id}{speed};
+    my $orientation = $item->{$id}{orientation};
     my $target_col;
     my $target_row;
     my $line;
-    if ($ship{$ship_id}{x} % 2 == 0) { $line = "even"; }
-    if ($ship{$ship_id}{x} % 2 == 1) { $line = "odd"; }
-    if ($speed == 0) { $speed = 1; }
-
+    if ($item->{$id}{x} % 2 == 0) { $line = "even"; }
+    if ($item->{$id}{x} % 2 == 1) { $line = "odd"; }
+    
     if ($orientation == 0) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} + $speed);
+            $target_row = $item->{$id}{y};
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} + $speed);
+            $target_row = $item->{$id}{y};
         }
     } elsif ($orientation == 1) {
         if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} - $speed);
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = ($item->{$id}{x} + $speed);
+            $target_row = ($item->{$id}{y} - $speed);
         }
     } elsif ($orientation == 2) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = ($item->{$id}{x} - $speed);
+            $target_row = ($item->{$id}{y} - $speed);
         } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} - $speed);
         }
     } elsif ($orientation == 3) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} - $speed);
+            $target_row = $item->{$id}{y};
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} - $speed);
+            $target_row = $item->{$id}{y};
         }
     } elsif ($orientation == 4) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = ($item->{$id}{x} - $speed);
+            $target_row = ($item->{$id}{y} + $speed);
         } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} + $speed);
         }
     } elsif ($orientation == 5) {
         if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} + $speed);
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = ($item->{$id}{x} + $speed);
+            $target_row = ($item->{$id}{y} + $speed);
         }
     }
     
@@ -379,103 +190,259 @@ sub getshipfront {
     if ($target_row < 0) { $target_row = 0; }
     if ($target_row > 20) { $target_row = 20; }
 
-	return($target_col,$target_row);    
+   	return($target_col,$target_row);
 }
 
-sub getshipback {
-    my $ship_id = shift;
-    my $speed = $ship{$ship_id}{speed};
-    my $orientation = $ship{$ship_id}{orientation};
+sub predict2 {
+	my $item = shift;
+    my $id = shift;
+    my $speed = $item->{$id}{speed};
+    my $orientation = $item->{$id}{orientation};
     my $target_col;
     my $target_row;
     my $line;
-    if ($ship{$ship_id}{x} % 2 == 0) { $line = "even"; }
-    if ($ship{$ship_id}{x} % 2 == 1) { $line = "odd"; }
-    if ($speed == 0) { $speed = 1; }
+    if ($item->{$id}{next_x} % 2 == 0) { $line = "even"; }
+    if ($item->{$id}{next_x} % 2 == 1) { $line = "odd"; }
+    
+    if ($orientation == 0) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{next_x} + $speed);
+            $target_row = $item->{$id}{next_y};
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{next_x} + $speed);
+            $target_row = $item->{$id}{next_y};
+        }
+    } elsif ($orientation == 1) {
+        if ($line eq 'even') {
+            $target_col = $item->{$id}{next_x};
+            $target_row = ($item->{$id}{next_y} - $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{next_x} + $speed);
+            $target_row = ($item->{$id}{next_y} - $speed);
+        }
+    } elsif ($orientation == 2) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{next_x} - $speed);
+            $target_row = ($item->{$id}{next_y} - $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = $item->{$id}{next_x};
+            $target_row = ($item->{$id}{next_y} - $speed);
+        }
+    } elsif ($orientation == 3) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{next_x} - $speed);
+            $target_row = $item->{$id}{next_y};
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{next_x} - $speed);
+            $target_row = $item->{$id}{next_y};
+        }
+    } elsif ($orientation == 4) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{next_x} - $speed);
+            $target_row = ($item->{$id}{next_y} + $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = $item->{$id}{next_x};
+            $target_row = ($item->{$id}{next_y} + $speed);
+        }
+    } elsif ($orientation == 5) {
+        if ($line eq 'even') {
+            $target_col = $item->{$id}{next_x};
+            $target_row = ($item->{$id}{next_y} + $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{next_x} + $speed);
+            $target_row = ($item->{$id}{next_y} + $speed);
+        }
+    }
+    
+    if ($target_col < 0) { $target_col = 0; }
+    if ($target_col > 22) { $target_col = 22; }
+    if ($target_row < 0) { $target_row = 0; }
+    if ($target_row > 20) { $target_row = 20; }
 
-	if ($orientation == 0) {
-		$orientation = 3;
-	} elsif ($orientation == 1) {
-		$orientation = 4;
-	} elsif ($orientation == 2) {
-		$orientation = 5;
-	} elsif ($orientation == 3) {
-		$orientation = 0;
-	} elsif ($orientation == 4) {
-		$orientation = 1;
-	} elsif ($orientation == 5) {
-		$orientation = 2;
+   	return($target_col,$target_row);
+}
+
+sub predict3 {
+	my $item = shift;
+    my $id = shift;
+    my $speed = $item->{$id}{speed};
+    my $orientation = $item->{$id}{orientation};
+    my $target_col;
+    my $target_row;
+    my $line;
+    if ($item->{$id}{nextnext_x} % 2 == 0) { $line = "even"; }
+    if ($item->{$id}{nextnext_x} % 2 == 1) { $line = "odd"; }
+    
+    if ($orientation == 0) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{nextnext_x} + $speed);
+            $target_row = $item->{$id}{nextnext_y};
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{nextnext_x} + $speed);
+            $target_row = $item->{$id}{nextnext_y};
+        }
+    } elsif ($orientation == 1) {
+        if ($line eq 'even') {
+            $target_col = $item->{$id}{nextnext_x};
+            $target_row = ($item->{$id}{nextnext_y} - $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{nextnext_x} + $speed);
+            $target_row = ($item->{$id}{nextnext_y} - $speed);
+        }
+    } elsif ($orientation == 2) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{nextnext_x} - $speed);
+            $target_row = ($item->{$id}{nextnext_y} - $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = $item->{$id}{nextnext_x};
+            $target_row = ($item->{$id}{nextnext_y} - $speed);
+        }
+    } elsif ($orientation == 3) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{nextnext_x} - $speed);
+            $target_row = $item->{$id}{nextnext_y};
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{nextnext_x} - $speed);
+            $target_row = $item->{$id}{nextnext_y};
+        }
+    } elsif ($orientation == 4) {
+        if ($line eq 'even') {
+            $target_col = ($item->{$id}{nextnext_x} - $speed);
+            $target_row = ($item->{$id}{nextnext_y} + $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = $item->{$id}{nextnext_x};
+            $target_row = ($item->{$id}{nextnext_y} + $speed);
+        }
+    } elsif ($orientation == 5) {
+        if ($line eq 'even') {
+            $target_col = $item->{$id}{nextnext_x};
+            $target_row = ($item->{$id}{nextnext_y} + $speed);
+        } elsif ($line eq 'odd') {
+            $target_col = ($item->{$id}{nextnext_x} + $speed);
+            $target_row = ($item->{$id}{nextnext_y} + $speed);
+        }
+    }
+    
+    if ($target_col < 0) { $target_col = 0; }
+    if ($target_col > 22) { $target_col = 22; }
+    if ($target_row < 0) { $target_row = 0; }
+    if ($target_row > 20) { $target_row = 20; }
+
+   	return($target_col,$target_row);
+}
+
+sub shipcoordinates {
+	my $item = shift;
+    my $id = shift;
+    my $orientation = $item->{$id}{orientation};
+    my $target_col;
+    my $target_row;
+    my $line;
+    my $distance = 1;
+  	my $location = 'front';
+    
+    if ($item->{$id}{x} % 2 == 0) { $line = "even"; }
+    if ($item->{$id}{x} % 2 == 1) { $line = "odd"; }
+
+	START:
+
+	# Just turn around the orientation to get back coords
+	if ($location eq 'back') {
+		$distance = -2;
+		if ($orientation == 0) {
+			$orientation = 3;
+		} elsif ($orientation == 1) {
+			$orientation = 4;
+		} elsif ($orientation == 2) {
+			$orientation = 5;
+		} elsif ($orientation == 3) {
+			$orientation = 0;
+		} elsif ($orientation == 4) {
+			$orientation = 1;
+		} elsif ($orientation == 5) {
+			$orientation = 2;
+		}
 	}
 
     if ($orientation == 0) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} + $distance);
+            $target_row = $item->{$id}{y};
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} + $distance);
+            $target_row = $item->{$id}{y};
         }
     } elsif ($orientation == 1) {
         if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} - $distance);
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = ($item->{$id}{x} + $distance);
+            $target_row = ($item->{$id}{y} - $distance);
         }
     } elsif ($orientation == 2) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = ($item->{$id}{x} - $distance);
+            $target_row = ($item->{$id}{y} - $distance);
         } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} - $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} - $distance);
         }
     } elsif ($orientation == 3) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} - $distance);
+            $target_row = $item->{$id}{y};
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = $ship{$ship_id}{y};
+            $target_col = ($item->{$id}{x} - $distance);
+            $target_row = $item->{$id}{y};
         }
     } elsif ($orientation == 4) {
         if ($line eq 'even') {
-            $target_col = ($ship{$ship_id}{x} - $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = ($item->{$id}{x} - $distance);
+            $target_row = ($item->{$id}{y} + $distance);
         } elsif ($line eq 'odd') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} + $distance);
         }
     } elsif ($orientation == 5) {
         if ($line eq 'even') {
-            $target_col = $ship{$ship_id}{x};
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = $item->{$id}{x};
+            $target_row = ($item->{$id}{y} + $distance);
         } elsif ($line eq 'odd') {
-            $target_col = ($ship{$ship_id}{x} + $speed);
-            $target_row = ($ship{$ship_id}{y} + $speed);
+            $target_col = ($item->{$id}{x} + $distance);
+            $target_row = ($item->{$id}{y} + $distance);
         }
     }
-    
+
     if ($target_col < 0) { $target_col = 0; }
     if ($target_col > 22) { $target_col = 22; }
     if ($target_row < 0) { $target_row = 0; }
     if ($target_row > 20) { $target_row = 20; }
 
-	return($target_col,$target_row);    
+	if ($location eq 'front') {
+    	$item->{$id}{hull_front_x} = $target_col;
+    	$item->{$id}{hull_front_y} = $target_row;
+    	$location = 'mid';
+    	goto START;
+	} elsif ($location eq 'mid') {
+    	$item->{$id}{hull_mid_x} = $item->{$id}{x};
+    	$item->{$id}{hull_mid_y} = $item->{$id}{y};
+    	$location = 'back';
+    	goto START;
+    } elsif ($location eq 'back') {
+    	$item->{$id}{hull_back_x} = $target_col;
+    	$item->{$id}{hull_back_y} = $target_row;
+    }
 }
+
+
 
 
 sub findtarget {
     my $ship_id = shift;
     my $enemies = $ship{$ship_id}{enemies};
     foreach my $enemy_id (sort {%$enemies{$a} <=> %$enemies{$b}} keys %$enemies) {
-        if (($ship{$ship_id}{enemies}{$enemy_id} < 4) and (($persistent{ships}{$ship_id}{shot} + $persistent{ships}{$ship_id}{shottime}) < $tick)) {
-        	$persistent{ships}{$ship_id}{shottime} = 1;
-            $ship{$ship_id}{enemy} = "$enemy_id";
-            last;
-        } elsif (($ship{$ship_id}{enemies}{$enemy_id} < 11) and (($persistent{ships}{$ship_id}{shot} + $persistent{ships}{$ship_id}{shottime}) < $tick)) {
-        	$persistent{ships}{$ship_id}{shottime} = 2;
+        if (($ship{$ship_id}{enemies}{$enemy_id} < 11) and (($persistent{ships}{$ship_id}{shot} + 1) < $tick)) {
             $ship{$ship_id}{enemy} = "$enemy_id";
             last;
         } elsif (!$ship{$ship_id}{nextrum}) {
@@ -508,13 +475,23 @@ sub findnextrum {
     }
 }
 
+sub avoidmine {
+    my $ship_id = shift;
+    my $mines = $ship{$ship_id}{mines};
+    foreach my $mine_id (sort {%$mines{$a} <=> %$mines{$b}} keys %$mines) {
+        if (($ship{$ship_id}{nextnextnext_x} == $mine{$mine_id}{x}) and ($ship{$ship_id}{nextnextnext_y} == $mine{$mine_id}{y})) {
+        	return "true";            
+        }
+    }
+}
+
 sub findmine {
     my $ship_id = shift;
     my $mines = $ship{$ship_id}{mines};
     foreach my $mine_id (sort {%$mines{$a} <=> %$mines{$b}} keys %$mines) {
-        if (!$persistent{mines}{$mine_id}{trackedby}) {
-            if ((($ship{$ship_id}{mines}{$mine_id} > 3) or ($ship{$ship_id}{mines}{$mine_id} < 6)) and (($persistent{ships}{$ship_id}{shot} + 1) < $tick) and (!$ship{$ship_id}{enemy})) {
-            	$persistent{mines}{$mine_id}{trackedby} = $ship_id;
+        if ($persistent{mines}{$mine_id}{shot} eq 'false') {
+            if ((($ship{$ship_id}{mines}{$mine_id} > 2) or ($ship{$ship_id}{mines}{$mine_id} < 2)) and (($persistent{ships}{$ship_id}{shot} + 2) < $tick) and (!$ship{$ship_id}{enemy})) {
+            	$persistent{mines}{$mine_id}{shot} = 'true';
                 $ship{$ship_id}{mine} = "$mine_id";
                 last;
             }
@@ -522,91 +499,23 @@ sub findmine {
     }
 }
 
-sub getcubedistance {
-    my $x1 = shift;
-    my $y1 = shift;
-    my $x2 = shift;
-    my $y2 = shift;
-    my $distance = (((($x1 - $x2) * ($x1 - $x2))) + ((($y1 - $y2) * ($y1 - $y2))));
-    $distance = sqrt($distance);
-    return int($distance);
-}
-
-sub getcubedistance {
-    my $cube_x1 = shift;
-    my $cube_y1 = shift;
-    my $cube_z1 = shift;
-    my $cube_x2 = shift;
-    my $cube_y2 = shift;
-    my $cube_z2 = shift;
-    my $cubedistance = (abs($cube_x1 - $cube_x2) + abs($cube_y1 - $cube_y2) + abs($cube_z1 - $cube_z2)) / 2;
-}
-
-sub attackmode {
-    my $ship_id = shift;
-    my $target_id = $ship{$ship_id}{enemy};
-    my $target_x = $enemy{$target_id}{x};
-    my $target_y = $enemy{$target_id}{y};
-    my ($predict_x,$predict_y) = &aim($ship_id,$target_id);
-    my $enemydistance = $ship{$ship_id}{enemies}{$target_id};
-    if ($ship{$ship_id}{speed} > 1) {
-    	if (int(rand(2)) == 0) {
-    		print "PORT\n";
-    	} else {
-    		print"STARBOARD\n";
-    	}
-    } elsif ($enemydistance < 10) { #and ($ship{$ship_id}{suicide} ne 'false')) {
-       	$persistent{ships}{$ship_id}{shot} = $tick;
-       	print "FIRE $predict_x $predict_y EAT THIS\n";
+sub shoot {
+	my $ship_id = shift;
+	my $shot;
+	my $hit_x;
+	my $hit_y;
+    my $enemy_id = $ship{$ship_id}{enemy};
+    my $distance = $ship{$ship_id}{enemies}{$enemy_id};
+    if ($distance < 6) {
+	    $hit_x = $enemy{$enemy_id}{nextnext_x};
+	    $hit_y = $enemy{$enemy_id}{nextnext_y};
     } else {
-        print "MOVE $target_x $target_y\n";
+	    $hit_x = $enemy{$enemy_id}{nextnext_x};
+	    $hit_y = $enemy{$enemy_id}{nextnext_y};
     }
-}
-
-
-sub shipaction {
-    my $ship_id = shift;
-	my $cornercheck = &cornermove($ship_id);
-	my $cornerslide = &cornerslide($ship_id);
-	my ($shiphit,$shiphit_cmd) = &avoidhit($ship_id);
-    &findnextrum($ship_id);
-    &findtarget($ship_id);
-    &findmine($ship_id);
-    
-    
-    if ($cornerslide) {
-        print "$cornercheck\n";
-    } elsif ($cornercheck) {
-        print "$cornercheck\n";
-    } elsif ($shiphit eq 'true') {
-    	print "$shiphit_cmd INCOMING\n";
-    } elsif ($ship{$ship_id}{mine}) {
-        my $target_id = $ship{$ship_id}{mine};
-        my $target_x = $mine{$target_id}{x};
-        my $target_y = $mine{$target_id}{y};
-        $persistent{ships}{$ship_id}{shot} = $tick;
-        print "FIRE $target_x $target_y\n";
-    } elsif (!$ship{$ship_id}{nextrum}) {
-        &attackmode($ship_id);
-    } elsif (($ship{$ship_id}{enemy}) and ($ship{$ship_id}{suicide} eq 'false')) {
-        my $target_id = $ship{$ship_id}{enemy};
-        my ($predict_x,$predict_y) = &aim($ship_id,$target_id);
-        $persistent{ships}{$ship_id}{shot} = $tick;
-        print "FIRE $predict_x $predict_y EAT THIS\n";
-    } elsif ($ship{$ship_id}{nextrum}) {
-        my $rum_id = $ship{$ship_id}{nextrum};
-        my $rum_x = $rum{$rum_id}{x};
-        my $rum_y = $rum{$rum_id}{y};
         
-        my $distance = $ship{$ship_id}{kegs}{$rum_id};
-        if ($distance == 0) {
-        	print "FASTER GO GO GO\n";
-        } else {
-        	print "MOVE $rum_x $rum_y\n";
-        }
-    } else {
-        print "WAIT\n";  
-    }
+	$persistent{ships}{$ship_id}{shot} = $tick;
+    print "FIRE $hit_x $hit_y\n";
 }
 
 # game loop
@@ -624,29 +533,41 @@ while (1) {
                 if ($entity_id == 0) { $entity_id = "100"; }
                 $ship{$entity_id}{x} = $x;
                 $ship{$entity_id}{y} = $y;
-                ($ship{$entity_id}{cube_x},$ship{$entity_id}{cube_y},$ship{$entity_id}{cube_z}) = oddr2cube($x,$y);
                 $ship{$entity_id}{orientation} = $arg_1;
                 $ship{$entity_id}{speed} = $arg_2;
                 $ship{$entity_id}{rum} = $arg_3;
-                ($ship{$entity_id}{next_x},$ship{$entity_id}{next_y}) = predictnext($entity_id);
-                ($ship{$entity_id}{hull_front_x},$ship{$entity_id}{hull_front_y}) = &getshipfront($entity_id);
-                ($ship{$entity_id}{hull_back_x},$ship{$entity_id}{hull_back_y}) = &getshipback($entity_id);
-                $ship{$entity_id}{hull_mid_x} = $x;
-                $ship{$entity_id}{hull_mid_y} = $y;
-                if (!$persistent{ships}{$entity_id}{shot}) { $persistent{ships}{$entity_id}{shot} = "0"; }
-                if (!$persistent{ships}{$entity_id}{shottime}) { $persistent{ships}{$entity_id}{shottime} = 2; }
-                if (!$persistent{ships}{$entity_id}{speed}) { $persistent{ships}{$entity_id}{speed} = 0; }
+
+                if (!$persistent{ships}{$entity_id}{shot}) {
+                	$persistent{ships}{$entity_id}{shot} = "0";
+                }
+                
+                if (!$ship{$entity_id}{hasmines}) {
+                	$ship{$entity_id}{hasmines} = 5;
+                }
+                
+                if (!$persistent{ships}{$entity_id}{speed}) {
+                	$persistent{ships}{$entity_id}{speed} = 0;
+                }
+                
                 if ($tick & 2) {
                 	$persistent{ships}{$entity_id}{speed} = $ship{$entity_id}{speed};
                 }
+
+                if (!$ship{$entity_id}{stuck}) {
+                	$ship{$entity_id}{stuck} = 'false';
+                }
+                
                 if (($persistent{ships}{$entity_id}{speed} == $ship{$entity_id}{speed}) and ($ship{$entity_id}{speed} == 0)) {
                 	$ship{$entity_id}{stuck} = 'true';
                 } else {
                 	$ship{$entity_id}{stuck} = 'false';
                 }
-                
-                if (!$ship{$entity_id}{hasmines}) { $ship{$entity_id}{hasmines} = 5; }
-                if (!$ship{$entity_id}{suicide}) { $ship{$entity_id}{suicide} = 'false'; }
+
+				($ship{$entity_id}{cube_x},$ship{$entity_id}{cube_y},$ship{$entity_id}{cube_z}) = oddr2cube($x,$y);
+                &shipcoordinates(\%ship,$entity_id);
+                ($ship{$entity_id}{next_x},$ship{$entity_id}{next_y}) = &predict(\%ship,$entity_id);
+                ($ship{$entity_id}{nextnext_x},$ship{$entity_id}{nextnext_y}) = &predict2(\%ship,$entity_id);
+                ($ship{$entity_id}{nextnextnext_x},$ship{$entity_id}{nextnextnext_y}) = &predict3(\%ship,$entity_id);
             } else {
                 if ($entity_id == 0) { $entity_id = "200"; }
                 $enemy{$entity_id}{x} = $x;
@@ -654,9 +575,12 @@ while (1) {
                 ($enemy{$entity_id}{cube_x},$enemy{$entity_id}{cube_y},$enemy{$entity_id}{cube_z}) = oddr2cube($x,$y);
                 $enemy{$entity_id}{orientation} = $arg_1;
                 $enemy{$entity_id}{speed} = $arg_2;
-                $enemy{$entity_id}{rum} = $arg_3;            
+                $enemy{$entity_id}{rum} = $arg_3;          
+                &shipcoordinates(\%enemy,$entity_id);
+                ($enemy{$entity_id}{next_x},$enemy{$entity_id}{next_y}) = &predict(\%enemy,$entity_id);
+                ($enemy{$entity_id}{nextnext_x},$enemy{$entity_id}{nextnext_y}) = &predict2(\%enemy,$entity_id);
+                ($enemy{$entity_id}{nextnextnext_x},$enemy{$entity_id}{nextnextnext_y}) = &predict3(\%enemy,$entity_id);
             }
-            
         } elsif ($entity_type eq 'BARREL') {
             if ($entity_id == 0) { $entity_id = "300"; }
             $rum{$entity_id}{x} = $x;
@@ -664,15 +588,12 @@ while (1) {
             ($rum{$entity_id}{cube_x},$rum{$entity_id}{cube_y},$rum{$entity_id}{cube_z}) = oddr2cube($x,$y);
             $rum{$entity_id}{amount} = $arg_1;
             if (!$persistent{rum}{$entity_id}{trackedby}) { $persistent{rum}{$entity_id}{trackedby} = 1337; }
-            
-            
         } elsif ($entity_type eq 'MINE') {
             if ($entity_id == 0) { $entity_id = "400"; }
             $mine{$entity_id}{x} = $x;
             $mine{$entity_id}{y} = $y;
             if (!$persistent{mines}{$entity_id}{shot}) { $persistent{mines}{$entity_id}{shot} = 'false'; }
             ($mine{$entity_id}{cube_x},$mine{$entity_id}{cube_y},$mine{$entity_id}{cube_z}) = oddr2cube($x,$y);
-            
         } elsif ($entity_type eq 'CANNONBALL') {
             if ($entity_id == 0) { $entity_id = "500"; }
             $cannonball{$entity_id}{target_x} = $x;
@@ -706,10 +627,16 @@ while (1) {
             my $ship_y = $ship{$ship_id}{y};
             my $rum_x = $rum{$rum_id}{x};
             my $rum_y = $rum{$rum_id}{y};
+            my $ship_cube_x = $ship{$ship_id}{cube_x};
+            my $ship_cube_y = $ship{$ship_id}{cube_y};
+            my $ship_cube_z = $ship{$ship_id}{cube_z};
+            my $rum_cube_x = $rum{$rum_id}{cube_x};
+            my $rum_cube_y = $rum{$rum_id}{cube_y};
+            my $rum_cube_z = $rum{$rum_id}{cube_z};
             $ship{$ship_id}{kegs}{$rum_id}{id} = $rum_id;
             $ship{$ship_id}{kegs}{$rum_id}{x} = $rum{$rum_id}{x};
             $ship{$ship_id}{kegs}{$rum_id}{y} = $rum{$rum_id}{y};
-            $ship{$ship_id}{kegs}{$rum_id} = &getcubedistance($ship_x,$ship_y,$rum_x,$rum_y);
+            $ship{$ship_id}{kegs}{$rum_id} = &getcubedistance($ship_cube_x,$ship_cube_y,$ship_cube_z,$rum_cube_x,$rum_cube_y,$rum_cube_z);
         }
 
         foreach my $mine_id (sort keys %mine) {
@@ -717,24 +644,73 @@ while (1) {
             my $ship_y = $ship{$ship_id}{y};
             my $mine_x = $mine{$mine_id}{x};
             my $mine_y = $mine{$mine_id}{y};
+            my $ship_cube_x = $ship{$ship_id}{cube_x};
+            my $ship_cube_y = $ship{$ship_id}{cube_y};
+            my $ship_cube_z = $ship{$ship_id}{cube_z};
+            my $mine_cube_x = $mine{$mine_id}{cube_x};
+            my $mine_cube_y = $mine{$mine_id}{cube_y};
+            my $mine_cube_z = $mine{$mine_id}{cube_z};
             $ship{$ship_id}{mines}{$mine_id}{id} = $mine_id;
             $ship{$ship_id}{mines}{$mine_id}{x} = $mine{$mine_id}{x};
             $ship{$ship_id}{mines}{$mine_id}{y} = $mine{$mine_id}{y};
-            $ship{$ship_id}{mines}{$mine_id} = &getcubedistance($ship_x,$ship_y,$mine_x,$mine_y);
+            $ship{$ship_id}{mines}{$mine_id} = &getcubedistance($ship_cube_x,$ship_cube_y,$ship_cube_z,$mine_cube_x,$mine_cube_y,$mine_cube_z);
         }
-        
-        foreach my $ship_id (sort keys %ship) { $shipcount++; }
-        
 
-        &shipaction($ship_id);
+		my $cornerslide = &cornerslide($ship_id);
+		my ($shiphit,$shiphit_cmd) = &avoidhit($ship_id);
+		my $minehit = &avoidmine($ship_id);
+        &findnextrum($ship_id);
+        &findtarget($ship_id);
+        &findmine($ship_id);
+
+        if ($minehit) {
+        	print "MOVE 10 12 ARGH\n";
+
+        } elsif ($cornerslide) {
+        	print "$cornerslide\n";
+
+    	} elsif ($shiphit eq 'true') {
+        	print "$shiphit_cmd\n";
+
+        } elsif ($ship{$ship_id}{mine}) {
+            my $target_id = $ship{$ship_id}{mine};
+            my $target_x = $mine{$target_id}{x};
+            my $target_y = $mine{$target_id}{y};
+            $persistent{ships}{$ship_id}{shot} = $tick;
+            print "FIRE $target_x $target_y\n";
+
+        } elsif (!$ship{$ship_id}{nextrum}) {
+            my $target_id = $ship{$ship_id}{enemy};
+            my $target_x = $enemy{$target_id}{x};
+            my $target_y = $enemy{$target_id}{y};
+            my $predict_x = $enemy{$target_id}{next_x};
+            my $predict_y = $enemy{$target_id}{next_y};
+            my $enemydistance = $ship{$ship_id}{enemies}{$target_id};
+            if ($enemydistance < 6) {
+                $persistent{ships}{$ship_id}{shot} = $tick;
+                print "FIRE $predict_x $predict_y\n";
+            } else {
+                print "MOVE $target_x $target_y\n";
+            }
+
+        } elsif ($ship{$ship_id}{enemy}) {
+            &shoot($ship_id);
+        } elsif ($ship{$ship_id}{nextrum}) {
+            my $rum_id = $ship{$ship_id}{nextrum};
+            my $rum_x = $rum{$rum_id}{x};
+            my $rum_y = $rum{$rum_id}{y};
+           	print "MOVE $rum_x $rum_y\n";
+
+        } else {
+                print "WAIT\n";  
+        }
     }
     
     #print STDERR Dumper(%ship);
+    #print STDERR Dumper(%persistent);
     #print STDERR Dumper(%mine);
     #print STDERR Dumper(%cannonball);
     #print STDERR Dumper(%enemy);
-    #print STDERR Dumper(%persistent);
-    
     undef %rum;
     %rum = ();
     undef %ship;
@@ -747,5 +723,5 @@ while (1) {
     %cannonball = ();
 
     my $duration = time - $start;
-    print STDERR "Loop: $tick - Global Runtime: $duration seconds.\n";
+    print STDERR "Tick: $tick - Runtime: $duration\n";
 }
