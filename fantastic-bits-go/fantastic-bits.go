@@ -1,17 +1,31 @@
 package main
 
 import "fmt"
-import "os"
+import "math"
+//import "os"
 
-/**
- * Grab Snaffles and try to throw them through the opponent's goal!
- * Move towards a Snaffle and use your team id to determine where you need to throw it.
- **/
+type object struct {
+    id int
+    item string
+    x float64
+    y float64
+    vx float64
+    vy float64
+    state float64
+}
+
+func getdistance(x1 float64, x2 float64, y1 float64, y2 float64) float64 {
+    var distance float64 = ((((x1 - x2) * (x1 - x2))) + (((y1 - y2) * (y1 - y2))))
+    distance = math.Sqrt(distance)
+    return distance
+}
 
 func main() {
     // myTeamId: if 0 you need to score on the right of the map, if 1 you need to score on the left
     var myTeamId int
     fmt.Scan(&myTeamId)
+    
+    var entity = make(map[string]object)
     
     for {
         var myScore, myMagic int
@@ -20,30 +34,31 @@ func main() {
         var opponentScore, opponentMagic int
         fmt.Scan(&opponentScore, &opponentMagic)
         
-        // entities: number of entities still in game
         var entities int
         fmt.Scan(&entities)
         
         for i := 0; i < entities; i++ {
-            // entityId: entity identifier
             // entityType: "WIZARD", "OPPONENT_WIZARD" or "SNAFFLE" (or "BLUDGER" after first league)
-            // x: position
-            // y: position
-            // vx: velocity
-            // vy: velocity
-            // state: 1 if the wizard is holding a Snaffle, 0 otherwise
             var entityId int
             var entityType string
-            var x, y, vx, vy, state int
+            var x, y, vx, vy, state float64
+            var id object
             fmt.Scan(&entityId, &entityType, &x, &y, &vx, &vy, &state)
-        }
-        for i := 0; i < 2; i++ {
             
-            // fmt.Fprintln(os.Stderr, "Debug messages...")
+            id.id = entityId
+            id.item = entityType
+            id.x = x
+            id.y = y
+            id.vx = vx
+            id.vx = vy
+            id.state = state
             
-            // Edit this line to indicate the action for each wizard (0 ≤ thrust ≤ 150, 0 ≤ power ≤ 500)
-            // i.e.: "MOVE x y thrust" or "THROW x y power"
-            fmt.Printf("MOVE 8000 3750 100\n")
+            entity["id"] = id
         }
+
+        for entityid := range entity {
+            fmt.Println("MOVE", entity[entityid].x, entity[entityid].y, "100\n")
+        }
+            
     }
 }
