@@ -2,8 +2,8 @@ use strict;
 use warnings;
 #use diagnostics;
 use 5.20.1;
-use Data::Dumper;
-$Data::Dumper::Sortkeys = 1;
+#use Data::Dumper;
+#$Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw( time );
 select(STDOUT); $| = 1;
 
@@ -16,6 +16,7 @@ my %mine;
 my %cannonball;
 my $tick;
 
+# Convert odd-r hex to cube coordinates
 sub oddr2cube {
     my $col = shift;
     my $row = shift;
@@ -25,6 +26,7 @@ sub oddr2cube {
     return($x,$y,$z);
 }
 
+# Convert cube to odd-r hex coordinates
 sub cube2oddr {
     my $x = shift;
     my $y = shift;
@@ -34,6 +36,7 @@ sub cube2oddr {
     return($col,$row);
 }
 
+# Get distance from two cube positions
 sub getcubedistance {
     my $cube_x1 = shift;
     my $cube_y1 = shift;
@@ -44,6 +47,7 @@ sub getcubedistance {
     my $cubedistance = (abs($cube_x1 - $cube_x2) + abs($cube_y1 - $cube_y2) + abs($cube_z1 - $cube_z2)) / 2;
 }
 
+# Move away from the edges
 sub cornerslide {
     my $ship_id = shift;
     my $x = $ship{$ship_id}{hull_front_x};
@@ -63,6 +67,7 @@ sub cornerslide {
     }
 }
 
+# Avoid cannonballs
 sub avoidhit {
 	my $ship_id = shift;
     my $ship_next_x = $ship{$ship_id}{next_x};
@@ -124,6 +129,7 @@ sub avoidhit {
     }
 }
 
+# Predict next move based on current position/orientation/speed
 sub predict {
 	my $item = shift;
     my $id = shift;
@@ -193,6 +199,7 @@ sub predict {
    	return($target_col,$target_row);
 }
 
+# Predict move based on next position/orientation/speed
 sub predict2 {
 	my $item = shift;
     my $id = shift;
@@ -262,6 +269,7 @@ sub predict2 {
    	return($target_col,$target_row);
 }
 
+# Predict move based on following round position/orientation/speed
 sub predict3 {
 	my $item = shift;
     my $id = shift;
@@ -331,6 +339,7 @@ sub predict3 {
    	return($target_col,$target_row);
 }
 
+# Save the ship-coordinates
 sub shipcoordinates {
 	my $item = shift;
     my $id = shift;
@@ -435,9 +444,7 @@ sub shipcoordinates {
     }
 }
 
-
-
-
+# Find the next enemy ship
 sub findtarget {
     my $ship_id = shift;
     my $enemies = $ship{$ship_id}{enemies};
@@ -452,6 +459,7 @@ sub findtarget {
     }
 }
 
+# Find the next rum keg
 sub findnextrum {
     my $ship_id = shift;
     my $rumkegs = $ship{$ship_id}{kegs};
@@ -475,6 +483,7 @@ sub findnextrum {
     }
 }
 
+# Avoid mines
 sub avoidmine {
     my $ship_id = shift;
     my $mines = $ship{$ship_id}{mines};
@@ -485,12 +494,13 @@ sub avoidmine {
     }
 }
 
+# Find the next mine
 sub findmine {
     my $ship_id = shift;
     my $mines = $ship{$ship_id}{mines};
     foreach my $mine_id (sort {%$mines{$a} <=> %$mines{$b}} keys %$mines) {
         if ($persistent{mines}{$mine_id}{shot} eq 'false') {
-            if ((($ship{$ship_id}{mines}{$mine_id} > 2) or ($ship{$ship_id}{mines}{$mine_id} < 2)) and (($persistent{ships}{$ship_id}{shot} + 2) < $tick) and (!$ship{$ship_id}{enemy})) {
+            if ((($ship{$ship_id}{mines}{$mine_id} > 2) or ($ship{$ship_id}{mines}{$mine_id} < 6)) and (($persistent{ships}{$ship_id}{shot} + 1) < $tick) and (!$ship{$ship_id}{enemy})) {
             	$persistent{mines}{$mine_id}{shot} = 'true';
                 $ship{$ship_id}{mine} = "$mine_id";
                 last;
@@ -499,6 +509,7 @@ sub findmine {
     }
 }
 
+# Shot function
 sub shoot {
 	my $ship_id = shift;
 	my $shot;
@@ -518,7 +529,7 @@ sub shoot {
     print "FIRE $hit_x $hit_y\n";
 }
 
-# game loop
+# Game loop
 while (1) {
     my $start = time;
     $tick++;
@@ -530,6 +541,8 @@ while (1) {
 
         if ($entity_type eq 'SHIP') {
             if ($arg_4 == 1) {
+            	
+            	# Define our Ships
                 if ($entity_id == 0) { $entity_id = "100"; }
                 $ship{$entity_id}{x} = $x;
                 $ship{$entity_id}{y} = $y;
@@ -568,6 +581,8 @@ while (1) {
                 ($ship{$entity_id}{next_x},$ship{$entity_id}{next_y}) = &predict(\%ship,$entity_id);
                 ($ship{$entity_id}{nextnext_x},$ship{$entity_id}{nextnext_y}) = &predict2(\%ship,$entity_id);
                 ($ship{$entity_id}{nextnextnext_x},$ship{$entity_id}{nextnextnext_y}) = &predict3(\%ship,$entity_id);
+                
+			# Define enemy Ships
             } else {
                 if ($entity_id == 0) { $entity_id = "200"; }
                 $enemy{$entity_id}{x} = $x;
@@ -581,6 +596,8 @@ while (1) {
                 ($enemy{$entity_id}{nextnext_x},$enemy{$entity_id}{nextnext_y}) = &predict2(\%enemy,$entity_id);
                 ($enemy{$entity_id}{nextnextnext_x},$enemy{$entity_id}{nextnextnext_y}) = &predict3(\%enemy,$entity_id);
             }
+            
+		# Define Rum Kegs
         } elsif ($entity_type eq 'BARREL') {
             if ($entity_id == 0) { $entity_id = "300"; }
             $rum{$entity_id}{x} = $x;
@@ -588,12 +605,16 @@ while (1) {
             ($rum{$entity_id}{cube_x},$rum{$entity_id}{cube_y},$rum{$entity_id}{cube_z}) = oddr2cube($x,$y);
             $rum{$entity_id}{amount} = $arg_1;
             if (!$persistent{rum}{$entity_id}{trackedby}) { $persistent{rum}{$entity_id}{trackedby} = 1337; }
+            
+		# Define Mines
         } elsif ($entity_type eq 'MINE') {
             if ($entity_id == 0) { $entity_id = "400"; }
             $mine{$entity_id}{x} = $x;
             $mine{$entity_id}{y} = $y;
             if (!$persistent{mines}{$entity_id}{shot}) { $persistent{mines}{$entity_id}{shot} = 'false'; }
             ($mine{$entity_id}{cube_x},$mine{$entity_id}{cube_y},$mine{$entity_id}{cube_z}) = oddr2cube($x,$y);
+            
+		# Define Cannonballs
         } elsif ($entity_type eq 'CANNONBALL') {
             if ($entity_id == 0) { $entity_id = "500"; }
             $cannonball{$entity_id}{target_x} = $x;
@@ -604,7 +625,9 @@ while (1) {
         }
     }
     
+    # Save all items into each ships own hash
     foreach my $ship_id (sort keys %ship) {
+    	# Enemies
         foreach my $enemy_id (sort keys %enemy) {
             my $ship_x = $ship{$ship_id}{x};
             my $ship_y = $ship{$ship_id}{y};
@@ -622,6 +645,7 @@ while (1) {
             $ship{$ship_id}{enemies}{$enemy_id} = &getcubedistance($ship_cube_x,$ship_cube_y,$ship_cube_z,$enemy_cube_x,$enemy_cube_y,$enemy_cube_z);
         }
 
+    	# Rum
         foreach my $rum_id (sort keys %rum) {
             my $ship_x = $ship{$ship_id}{x};
             my $ship_y = $ship{$ship_id}{y};
@@ -639,6 +663,7 @@ while (1) {
             $ship{$ship_id}{kegs}{$rum_id} = &getcubedistance($ship_cube_x,$ship_cube_y,$ship_cube_z,$rum_cube_x,$rum_cube_y,$rum_cube_z);
         }
 
+    	# Mines
         foreach my $mine_id (sort keys %mine) {
             my $ship_x = $ship{$ship_id}{x};
             my $ship_y = $ship{$ship_id}{y};
@@ -656,6 +681,7 @@ while (1) {
             $ship{$ship_id}{mines}{$mine_id} = &getcubedistance($ship_cube_x,$ship_cube_y,$ship_cube_z,$mine_cube_x,$mine_cube_y,$mine_cube_z);
         }
 
+		# Run functions
 		my $cornerslide = &cornerslide($ship_id);
 		my ($shiphit,$shiphit_cmd) = &avoidhit($ship_id);
 		my $minehit = &avoidmine($ship_id);
@@ -663,6 +689,7 @@ while (1) {
         &findtarget($ship_id);
         &findmine($ship_id);
 
+		# Run actions
         if ($minehit) {
         	print "MOVE 10 12 ARGH\n";
 
@@ -706,11 +733,15 @@ while (1) {
         }
     }
     
+    
+    # Debug #
     #print STDERR Dumper(%ship);
     #print STDERR Dumper(%persistent);
     #print STDERR Dumper(%mine);
     #print STDERR Dumper(%cannonball);
     #print STDERR Dumper(%enemy);
+    
+    # Undef hashes before next round starts
     undef %rum;
     %rum = ();
     undef %ship;
@@ -722,6 +753,7 @@ while (1) {
     undef %cannonball;
     %cannonball = ();
 
+	# Print duration per round
     my $duration = time - $start;
     print STDERR "Tick: $tick - Runtime: $duration\n";
 }
